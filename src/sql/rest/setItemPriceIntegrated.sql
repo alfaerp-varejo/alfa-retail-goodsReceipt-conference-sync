@@ -1,0 +1,1 @@
+UPDATE "{0}"."GCV_ITM1_UPDATE_LOG" SET "SendPDV" = 'Y' WHERE "ItemCode" = '{1}' AND "PriceList" = {2};
