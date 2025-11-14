@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { HanaSpecifService } from "src/core/b1/hana/specif/specif.service";
 import { ServiceLayerSpecifService } from "src/core/b1/serviceLayer/specif/specif.service";
-import { SpecifGCV, SpecifB1, SpecifValueB1 } from "src/core/interfaces/specif";
+import { SpecifGCV, SpecifB1, SpecifValueB1 } from "src/common/interfaces/specif";
 import { BtpCatalogSpecifService } from "src/core/btp/catalog/specif/specif.service";
 
 @Injectable()
@@ -45,15 +45,15 @@ export class SpecifService implements OnModuleInit {
 
                 const listItems = await this.btpService.getList();
 
-                if(listItems.length === 0) {
+                if (listItems.length === 0) {
                     this.logger.log('SPECIFICATION - Não encontrou registros pendentes');
                     break;
                 }
-                                    
+
                 for (const item of listItems) {
                     await this.integrate(item);
                 }
-            };           
+            };
 
         } catch (error) {
             this.logger.error(error.message);
@@ -67,14 +67,14 @@ export class SpecifService implements OnModuleInit {
     async integrate(specif: SpecifGCV) {
         const { ID, code, name } = specif;
 
-        if(!ID) return;
+        if (!ID) return;
 
         try {
             this.logger.log(`SPECIFICATION - Integrando registro ${code} - ${name}`);
 
             const exists = await this.dbService.checkExists(code);
-           
-			const data = this.mapAnyToEntity(specif);
+
+            const data = this.mapAnyToEntity(specif);
 
             if (exists) {
                 await this.slService.put(data);
@@ -103,25 +103,25 @@ export class SpecifService implements OnModuleInit {
                 lastSyncMessage: error.message
             });
         }
-    }    
+    }
 
-	private mapAnyToEntity(specif: SpecifGCV) {
+    private mapAnyToEntity(specif: SpecifGCV) {
 
         const _values = specif._values || []
 
-		const entity: SpecifB1 = {
+        const entity: SpecifB1 = {
             Name: specif.name,
             U_descr: specif.descr,
-			GCV_SPECIF_VALUECollection: _values.map((item, i): SpecifValueB1 => {
-				return {
+            GCV_SPECIF_VALUECollection: _values.map((item, i): SpecifValueB1 => {
+                return {
                     LineId: ++i,
                     U_value: item.code,
                     U_name: item.name,
                     U_descr: item.descr
-				}
-			})
-		};
+                }
+            })
+        };
 
-		return entity;
-	}
+        return entity;
+    }
 }

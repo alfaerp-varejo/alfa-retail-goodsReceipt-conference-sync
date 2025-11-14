@@ -1,6 +1,0 @@
-SELECT 
-    COUNT("TABLE_NAME") AS "contador"
-FROM SYS.TABLES 
-WHERE 
-    SCHEMA_NAME = '{0}' 
-    AND TABLE_NAME = '{1}';

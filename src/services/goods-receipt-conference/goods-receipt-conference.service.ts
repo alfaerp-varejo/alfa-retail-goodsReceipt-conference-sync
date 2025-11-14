@@ -1,21 +1,20 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { HanaSkuService } from "src/core/b1/hana/sku/sku.service";
 import { ServiceLayerSkuService } from "src/core/b1/serviceLayer/sku/sku.service";
-import { Item, SKU } from "src/common/interfaces/sku";
-import { BtpCatalogSKUService } from "src/core/btp/catalog/sku/sku.service";
+import { GoodsReceiptConference } from "src/common/interfaces/sku";
+import { BtpCatalogGoodsReceiptConferenceService } from "src/core/btp/catalog/sku/sku.service";
 
 @Injectable()
-export class SKUService implements OnModuleInit {
+export class GoodsReceiptConferenceService implements OnModuleInit {
 
-    private logger = new Logger(SKUService.name);
+    private logger = new Logger(GoodsReceiptConferenceService.name);
     private isDev = process.env.NODE_ENV === 'development';
     private isRunning = false;
 
     constructor(
         private readonly dbService: HanaSkuService,
         private readonly slService: ServiceLayerSkuService,
-        private readonly btpService: BtpCatalogSKUService
+        private readonly btpService: BtpCatalogGoodsReceiptConferenceService
     ) {
     }
 
@@ -25,15 +24,6 @@ export class SKUService implements OnModuleInit {
         }
     }
 
-    @Cron(CronExpression.EVERY_MINUTE, { name: 'item-cron' })
-    async run() {
-        if (this.isDev) return; // Ignora se for dev
-
-        if (this.isRunning) return;
-
-        await this.process();
-    }
-
     async process() {
         try {
             this.isRunning = true;
@@ -41,12 +31,12 @@ export class SKUService implements OnModuleInit {
             this.logger.log(`Start`);
 
             while (true) {
-                this.logger.log('SKU - Consultando registros pendentes');
+                this.logger.log('GoodsReceiptConference - Consultando registros pendentes');
 
                 const listItems = await this.btpService.getList();
 
                 if (listItems.length === 0) {
-                    this.logger.log('SKU - Não encontrou registros pendentes');
+                    this.logger.log('GoodsReceiptConference - Não encontrou registros pendentes');
                     break;
                 }
 
@@ -60,11 +50,11 @@ export class SKUService implements OnModuleInit {
         }
         finally {
             this.isRunning = false;
-            this.logger.log(`SKU - Finalizando integração...`);
+            this.logger.log(`GoodsReceiptConference - Finalizando integração...`);
         }
     }
 
-    async integrate(sku: SKU) {
+    async integrate(sku: GoodsReceiptConference) {
         const { ID, code, name } = sku;
 
         if (!ID) return;
@@ -105,7 +95,7 @@ export class SKUService implements OnModuleInit {
         }
     }
 
-    private mapAnyToEntity(sku: SKU) {
+    private mapAnyToEntity(sku: GoodsReceiptConference) {
 
         const entity: Item = {}
 
