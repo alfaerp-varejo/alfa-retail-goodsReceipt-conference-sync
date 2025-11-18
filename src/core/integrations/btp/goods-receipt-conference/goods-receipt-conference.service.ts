@@ -27,7 +27,7 @@ export class BtpGoodsReceiptConferenceService {
 
             const headers = await this.capService.getHeaders();
 
-            const res = await axios.get(`${this.env.host}/odata/v4/integration/GoodsReceiptConference?$top=100&$expand=_itens&$filter=lastSyncStatus_code eq 'P'`, { headers });
+            const res = await axios.get(`${this.env.host}/odata/v4/integration/GoodsReceiptConference?$top=100&$expand=_itens&$filter=lastSyncStatus_code eq 'P' and conferenceStatus eq 'C' and statusApproval_code eq 2`, { headers });
             const response = res.data.value ?? res.data;
 
             if (response.error) {
