@@ -6,7 +6,7 @@ import { Injectable } from "@nestjs/common";
 import { stringFormat } from "src/common/utils/stringExtension";
 
 @Injectable()
-export class HanaGoodsReceiptConferenceService {
+export class HanaPurchaseInvoiceService {
     private env: Config;
 
     constructor(
@@ -16,18 +16,19 @@ export class HanaGoodsReceiptConferenceService {
         this.env = this.configService.get();
     }
 
-    async checkExists(serial?: number, chaveAcesso?: string, bplCode?: number): Promise<boolean> {
+    async getPurchaseInvoicesByDraft(draftEntry?: number) {
         let query: string = '';
 
         try {
             const dataBase = this.env.DATABASE_NAME;
 
-            query = await readFile('src/sql/goods-receipt-conference/checkExists.sql', 'utf-8');
-            query = stringFormat(query, dataBase, serial, chaveAcesso, bplCode);
+            query = await readFile('src/sql/purchaseInvoice/getPurchaseInvoicesByDraft.sql', 'utf-8');
+            query = stringFormat(query, dataBase, draftEntry);
 
             const response = await this.hanaService.query<any[]>(query);
 
-            return response[0].contador > 0;
+            return response.length > 0 ? response[0] : undefined;
+
         } catch (error) {
             throw error;
         }

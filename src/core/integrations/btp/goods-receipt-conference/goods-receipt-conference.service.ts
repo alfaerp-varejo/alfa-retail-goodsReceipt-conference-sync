@@ -1,16 +1,16 @@
 import { ConfigService } from "src/core/config/config.service";
 import { BtpConfig } from "src/core/config/interfaces";
-import { CapService } from "../../cap/cap.service";
+import { CapService } from "../cap/cap.service";
 import { Injectable, Logger } from "@nestjs/common";
-import { SpecifGCV } from "src/common/interfaces/specif";
 import axios from 'axios';
 import { UUID } from "crypto";
 import { Sync } from "src/common/interfaces/sync";
+import { GoodsReceiptConference } from "src/common/interfaces/goods-receipt-conference";
 
 @Injectable()
-export class BtpCatalogSpecifService {
+export class BtpGoodsReceiptConferenceService {
 
-    private logger = new Logger(BtpCatalogSpecifService.name);
+    private logger = new Logger(BtpGoodsReceiptConferenceService.name);
 
     private env: BtpConfig;
 
@@ -21,22 +21,22 @@ export class BtpCatalogSpecifService {
         this.env = this.configService.getBtpConfig();
     }
 
-    async getList(): Promise<SpecifGCV[]> {
+    async getList(): Promise<GoodsReceiptConference[]> {
         try {
-            this.logger.log(`Consultando lista de Specifications pendentes!`);
+            this.logger.log(`Consultando lista de GoodsReceiptConferences pendentes!`);
 
             const headers = await this.capService.getHeaders();
 
-            const res = await axios.get(`${this.env.host}/odata/v4/integration/Specifications?$top=100&$expand=_values&$filter=lastSyncStatus_code eq 'P'`, { headers });
+            const res = await axios.get(`${this.env.host}/odata/v4/integration/GoodsReceiptConference?$top=100&$expand=_itens&$filter=lastSyncStatus_code eq 'P'`, { headers });
             const response = res.data.value ?? res.data;
 
             if (response.error) {
                 throw new Error(response.message.error.message);
             }
 
-            const specifs: SpecifGCV[] = response;
+            const products: GoodsReceiptConference[] = response;
 
-            return specifs;
+            return products;
         } catch (error) {
             throw error;
         }
@@ -44,18 +44,18 @@ export class BtpCatalogSpecifService {
 
     async setSyncFields(ID: UUID, sync: Sync): Promise<boolean> {
         try {
-            this.logger.log(`Atualizando Specif ID (${ID})`);
+            this.logger.log(`Atualizando GoodsReceiptConference ID (${ID})`);
 
             const headers = await this.capService.getHeaders();
 
-            const res = await axios.patch(`${this.env.host}/odata/v4/integration/Specifications(ID=${ID})`, sync, { headers });
+            const res = await axios.patch(`${this.env.host}/odata/v4/integration/GoodsReceiptConferences(ID=${ID})`, sync, { headers });
             const response = res.data.value ?? res.data;
 
             if (response.error) {
                 throw new Error(response.message.error.message);
             }
 
-            this.logger.log(`Patch status sync Specif (${ID}) finalizado com sucesso!`);
+            this.logger.log(`Patch status sync GoodsReceiptConference (${ID}) finalizado com sucesso!`);
 
             return true;
         } catch (error) {

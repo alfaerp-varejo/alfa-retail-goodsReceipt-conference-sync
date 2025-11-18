@@ -1,12 +1,11 @@
 import { ConfigService } from "src/core/config/config.service";
 import { Injectable, Logger } from "@nestjs/common";
 import * as ServiceLayer from 'b1-service-layer';
-import { Document } from "src/common/interfaces/document";
 
 @Injectable()
-export class ServiceLayerBrandService {
+export class ServiceLayerGoodsReceiptConferenceService {
 
-	private logger = new Logger(ServiceLayerBrandService.name);
+	private logger = new Logger(ServiceLayerGoodsReceiptConferenceService.name);
 
 	private sl: ServiceLayer;
 

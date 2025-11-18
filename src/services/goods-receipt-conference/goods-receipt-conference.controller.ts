@@ -1,9 +1,9 @@
 import { Controller, Post } from "@nestjs/common";
-import { SKUService } from "./goods-receipt-conference.service";
+import { GoodsReceiptConferenceService } from "./goods-receipt-conference.service";
 
-@Controller('skus')
-export class SKUController {
-    constructor(private readonly service: SKUService) { }
+@Controller('goodsReceiptConference')
+export class GoodsReceiptConferenceController {
+    constructor(private readonly service: GoodsReceiptConferenceService) { }
 
     @Post('run')
     runManualmente() {

@@ -1,12 +1,12 @@
-import { Controller, Post } from "@nestjs/common";
-import { SKUService } from "./sku.service";
+// import { Controller, Post } from "@nestjs/common";
+// import { SKUService } from "./sku.service";
 
-@Controller('skus')
-export class SKUController {
-    constructor(private readonly service: SKUService) { }
+// @Controller('skus')
+// export class SKUController {
+//     constructor(private readonly service: SKUService) { }
 
-    @Post('run')
-    runManualmente() {
-        return this.service.process();
-    }
-}
+//     @Post('run')
+//     runManualmente() {
+//         return this.service.process();
+//     }
+// }

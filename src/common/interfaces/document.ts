@@ -1,4 +1,4 @@
-export interface Document {
+export interface DocumentSAPB1 {
     DocEntry?: number;
     DocNum?: number;
     DocDate?: Date;
@@ -17,10 +17,10 @@ export interface Document {
     DocTotal?: number;
     TransNum?: number;
     U_ChaveAcesso?: string;
-    DocumentLines?: DocumentLine[];
+    DocumentLines?: DocumentLineSAPB1[];
 }
 
-export interface DocumentLine {
+export interface DocumentLineSAPB1 {
     LineNum?: number;
     ItemCode?: string;
     Quantity?: number;
@@ -37,6 +37,9 @@ export interface DocumentLine {
     CostingCode3?: string;
     CostingCode4?: string;
     CostingCode5?: string;
+    BaseEntry?: number;
+    BaseLine?: number;
+    BaseType?: string;
     U_GCV_id_venda_pdv?: string;
     U_GCV_lineId_venda_pdv?: number;
     U_GCV_quantity_checked?: number;

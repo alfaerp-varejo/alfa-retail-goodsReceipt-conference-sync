@@ -1,8 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { ServiceLayerSkuService } from "src/core/b1/serviceLayer/sku/sku.service";
-import { GoodsReceiptConference } from "src/common/interfaces/sku";
-import { BtpCatalogGoodsReceiptConferenceService } from "src/core/btp/catalog/sku/sku.service";
+import { DocumentLineSAPB1, DocumentSAPB1 } from "src/common/interfaces/document";
+import { GoodsReceiptConference, GoodsReceiptConferenceItem } from "src/common/interfaces/goods-receipt-conference";
+import { HanaGoodsReceiptConferenceService } from "src/core/integrations/b1/hana/goods-receipt-conference/goods-receipt-conference.service";
+import { ServiceLayerGoodsReceiptConferenceService } from "src/core/integrations/b1/serviceLayer/goods-receipt-conference/goods-receipt-conference.service";
+import { BtpGoodsReceiptConferenceService } from "src/core/integrations/btp/goods-receipt-conference/goods-receipt-conference.service";
+import { ServiceLayerPurchaseCreditNoteService } from "src/core/integrations/b1/serviceLayer/purchaseCreditNote/purchaseCreditNote.service";
+import { HanaPurchaseInvoiceService } from "src/core/integrations/b1/hana/purchaseInvoice/purchaseInvoiceservice";
+import { ServiceLayerDraftService } from "src/core/integrations/b1/serviceLayer/draft/draft.service";
 
 @Injectable()
 export class GoodsReceiptConferenceService implements OnModuleInit {
@@ -12,9 +17,11 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
     private isRunning = false;
 
     constructor(
-        private readonly dbService: HanaSkuService,
-        private readonly slService: ServiceLayerSkuService,
-        private readonly btpService: BtpCatalogGoodsReceiptConferenceService
+        private readonly dbService: HanaGoodsReceiptConferenceService,
+        private readonly dbPurchaseInvoice: HanaPurchaseInvoiceService,
+        private readonly slService: ServiceLayerPurchaseCreditNoteService,
+        private readonly serviceLayerDraftService: ServiceLayerDraftService,
+        private readonly btpService: BtpGoodsReceiptConferenceService
     ) {
     }
 
@@ -30,20 +37,26 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
 
             this.logger.log(`Start`);
 
-            while (true) {
+            let listGoodsReceiptConferences: GoodsReceiptConference[] = [];
+
+            do {
                 this.logger.log('GoodsReceiptConference - Consultando registros pendentes');
 
-                const listItems = await this.btpService.getList();
+                listGoodsReceiptConferences = await this.btpService.getList();
 
-                if (listItems.length === 0) {
-                    this.logger.log('GoodsReceiptConference - Não encontrou registros pendentes');
+                if (listGoodsReceiptConferences.length === 0) {
+                    this.logger.log('Confererência de mercadoria - Não encontrou registros pendentes');
                     break;
                 }
 
-                for (const item of listItems) {
+                this.logger.log(`Confererência de mercadoria - ${listGoodsReceiptConferences.length} registros pendentes encontrados`);
+                this.logger.debug(`Confererência de mercadoria: ${JSON.stringify(listGoodsReceiptConferences)}`);
+
+                for (const item of listGoodsReceiptConferences) {
                     await this.integrate(item);
                 }
-            };
+
+            } while (listGoodsReceiptConferences.length > 0);
 
         } catch (error) {
             this.logger.error(error.message);
@@ -54,22 +67,25 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
         }
     }
 
-    async integrate(sku: GoodsReceiptConference) {
-        const { ID, code, name } = sku;
+    async integrate(goodsReceiptConference: GoodsReceiptConference) {
+        const { ID, serial, cardCode, cardName, chaveAcesso, bplCode, docEntry } = goodsReceiptConference;
 
         if (!ID) return;
 
         try {
-            this.logger.log(`sku - Integrando registro ${code} - ${name}`);
+            this.logger.log(`Confererência de mercadoria - Integrando registro ${serial} -> ${cardCode} - ${cardName}`);
 
-            const exists = await this.dbService.checkExists(code);
+            const exists = await this.dbService.checkExists(serial, chaveAcesso, bplCode);
 
-            const data = this.mapAnyToEntity(sku);
+            if (!exists) {
+                await this.serviceLayerDraftService.saveToDocument(docEntry!);
 
-            if (exists) {
-                await this.slService.put(data);
-            } else {
-                await this.slService.post(data);
+                if (goodsReceiptConference._itens?.some(item => item.divergentQuantity! > 0)) {
+                    const purchaseInfo = await this.dbPurchaseInvoice.getPurchaseInvoicesByDraft(docEntry);
+                    const document = this.mapAnyToEntity(purchaseInfo.DocEntry!, goodsReceiptConference);
+
+                    await this.slService.post(document);
+                }
             }
 
             await this.btpService.setSyncFields(ID, {
@@ -79,13 +95,12 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 lastSyncMessage: ''
             });
 
-            this.logger.log(`sku - Integração ${code} - ${name} realizada com sucesso!`);
+            this.logger.log(`Confererência de mercadoria - Integração ${ID} - ${serial} realizada com sucesso!`);
 
-            return sku;
+            return goodsReceiptConference;
         } catch (error) {
-            this.logger.error(`sku - Erro ao integrar ${code} -> ${error.message}`);
+            this.logger.error(`Confererência de mercadoria - Erro ao integrar ${ID} -> ${error.message}`);
 
-            // await this.service.setReplicate(brand.Code);
             await this.btpService.setSyncFields(ID, {
                 isSynced: true,
                 lastSyncStatus_code: 'E',
@@ -95,75 +110,18 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
         }
     }
 
-    private mapAnyToEntity(sku: GoodsReceiptConference) {
+    private mapAnyToEntity(purchaseDocEntry: number, goodsReceiptConference: GoodsReceiptConference) {
 
-        const entity: Item = {}
-
-        entity.InventoryItem = 'tYES';
-        entity.SalesItem = 'tYES';
-        entity.PurchaseItem = 'tYES';
-        entity.ItemType = 'itItems';
-        entity.ItemClass = 'itcMaterial';
-
-        if (sku.code) entity.ItemCode = sku.code;
-        if (sku.name) entity.ItemName = sku.name;
-        if (sku.name) entity.ForeignName = sku.name;
-        if (sku.itemGroup_code != null) entity.ItemsGroupCode = sku.itemGroup_code;
-        if (sku.barcode != null) entity.BarCode = sku.barcode;
-
-        if (sku.material_code != null) entity.MaterialType = sku.material_code;
-        if (sku.ncm_code != null) entity.NCMCode = sku.ncm_code;
-        if (sku.source_code != null) entity.ProductSource = sku.source_code;
-        if (sku.cest_code != null) entity.CESTCode = sku.cest_code;
-
-        if (sku.purchaseUnit_code != null) entity.PurchaseUnit = sku.purchaseUnit_code;
-        if (sku.purchaseItemsPerUnit != null) entity.PurchaseItemsPerUnit = sku.purchaseItemsPerUnit;
-        if (sku.purchasePack_code != null) entity.PurchasePackagingUnit = sku.purchasePack_code;
-        if (sku.purchaseQtyPerPackUnit != null) entity.PurchaseQtyPerPackUnit = sku.purchaseQtyPerPackUnit;
-
-        if (sku.salesUnit_code != null) entity.SalesUnit = sku.salesUnit_code;
-        if (sku.salesItemsPerUnit != null) entity.SalesItemsPerUnit = sku.salesItemsPerUnit;
-        if (sku.salesPack_code != null) entity.SalesPackagingUnit = sku.salesPack_code;
-        if (sku.salesQtyPerPackUnit != null) entity.SalesQtyPerPackUnit = sku.salesQtyPerPackUnit;
-
-        if (sku.vendor_code != null) entity.Mainsupplier = sku.vendor_code;
-        if (sku.vendorReference != null) entity.SupplierCatalogNo = sku.vendorReference;
-        if (sku.inventoryUOM_code != null) entity.InventoryUOM = sku.inventoryUOM_code;
-
-        if (sku.salesUnitLength != null) entity.SalesUnitLength = parseFloat(sku.salesUnitLength);
-        if (sku.salesLengthUnit_code != null) entity.SalesLengthUnit = sku.salesLengthUnit_code;
-        if (sku.salesUnitWidth != null) entity.SalesUnitWidth = parseFloat(sku.salesUnitWidth);
-        if (sku.salesWidthUnit_code != null) entity.SalesWidthUnit = sku.salesWidthUnit_code;
-        if (sku.salesUnitHeight != null) entity.SalesUnitHeight = parseFloat(sku.salesUnitHeight);
-        if (sku.salesHeightUnit_code != null) entity.SalesHeightUnit = sku.salesHeightUnit_code;
-        if (sku.salesUnitVolume != null) entity.SalesUnitVolume = parseFloat(sku.salesUnitVolume);
-        if (sku.salesVolumeUnit_code != null) entity.SalesVolumeUnit = sku.salesVolumeUnit_code;
-        if (sku.salesUnitWeight != null) entity.SalesUnitWeight = parseFloat(sku.salesUnitWeight);
-        if (sku.salesWeightUnit_code != null) entity.SalesWeightUnit = sku.salesWeightUnit_code;
-
-        if (sku.purchaseUnitLength != null) entity.PurchaseUnitLength = parseFloat(sku.purchaseUnitLength);
-        if (sku.purchaseLengthUnit_code != null) entity.PurchaseLengthUnit = sku.purchaseLengthUnit_code;
-        if (sku.purchaseUnitWidth != null) entity.PurchaseUnitWidth = parseFloat(sku.purchaseUnitWidth);
-        if (sku.purchaseWidthUnit_code != null) entity.PurchaseWidthUnit = sku.purchaseWidthUnit_code;
-        if (sku.purchaseUnitHeight != null) entity.PurchaseUnitHeight = parseFloat(sku.purchaseUnitHeight);
-        if (sku.purchaseHeightUnit_code != null) entity.PurchaseHeightUnit = sku.purchaseHeightUnit_code;
-        if (sku.purchaseUnitVolume != null) entity.PurchaseUnitVolume = parseFloat(sku.purchaseUnitVolume);
-        if (sku.purchaseVolumeUnit_code != null) entity.PurchaseVolumeUnit = sku.purchaseVolumeUnit_code;
-        if (sku.purchaseUnitWeight != null) entity.PurchaseUnitWeight = parseFloat(sku.purchaseUnitWeight);
-        if (sku.purchaseWeightUnit_code != null) entity.PurchaseWeightUnit = sku.purchaseWeightUnit_code;
-
-        if (sku.brand_code != null) entity.U_GCV_brand_code = sku.brand_code;
-        if (sku.collection_code != null) entity.U_GCV_collection_code = sku.collection_code;
-        if (sku.category_code_1 != null) entity.U_GCV_category_code_1 = sku.category_code_1;
-        if (sku.category_code_2 != null) entity.U_GCV_category_code_2 = sku.category_code_2;
-        if (sku.category_code_3 != null) entity.U_GCV_category_code_3 = sku.category_code_3;
-        if (sku.category_code_4 != null) entity.U_GCV_category_code_4 = sku.category_code_4;
-        if (sku.category_code_5 != null) entity.U_GCV_category_code_5 = sku.category_code_5;
-        if (sku.product_code != null) entity.U_GCV_product_code = sku.product_code;
-        if (sku.variant_code != null) entity.U_GCV_variant_code = sku.variant_code;
-        if (sku.color_code != null) entity.U_GCV_color_code = sku.color_code;
-        if (sku.grid_code != null) entity.U_GCV_grid_code = sku.grid_code;
-        if (sku.gridItem_prefix != null) entity.U_GCV_gridItem_prefix = sku.gridItem_prefix;
+        const entity: DocumentSAPB1 = {
+            DocumentLines: goodsReceiptConference._itens!.map((line): DocumentLineSAPB1 => {
+                return {
+                    BaseEntry: purchaseDocEntry,
+                    BaseLine: line.baseLine,
+                    BaseType: '18',
+                    Quantity: line.beeped == 'N' ? Number(line.quantity) : ((Number(line.quantity) - Number(line.quantityChecked)) + (Number(line.divergentQuantity))),
+                }
+            })
+        };
 
         return entity;
     }

@@ -1,20 +1,27 @@
 import { Module } from "@nestjs/common";
-import { SKUService } from "./goods-receipt-conference.service";
-import { HanaSkuModule } from "src/core/b1/hana/sku/sku.module";
-import { SKUController } from "./sku.controller";
+import { GoodsReceiptConferenceService } from "./goods-receipt-conference.service";
+import { GoodsReceiptConferenceController } from "./goods-receipt-conference.controller";
 import { ConfigModule } from "src/core/config/config.module";
-import { ServiceLayerSkuModule } from "src/core/b1/serviceLayer/sku/sku.module";
-import { BtpCatalogSKUModule } from "src/core/btp/catalog/sku/sku.module";
+import { HanaGoodsReceiptConferenceModule } from "src/core/integrations/b1/hana/goods-receipt-conference/goods-receipt-conference.module";
+import { BtpGoodsReceiptConferenceModule } from "src/core/integrations/btp/goods-receipt-conference/goods-receipt-conference.module";
+import { ServiceLayerGoodsReceiptConferenceModule } from "src/core/integrations/b1/serviceLayer/goods-receipt-conference/goods-receipt-conference.module";
+import { ServiceLayerDraftModule } from "src/core/integrations/b1/serviceLayer/draft/draft.module";
+import { ServiceLayerPurchaseCreditNoteModule } from "src/core/integrations/b1/serviceLayer/purchaseCreditNote/purchaseCreditNote.module";
+import { HanaPurchaseInvoiceModule } from "src/core/integrations/b1/hana/purchaseInvoice/purchaseInvoice.module";
+// import { ServiceLayerSkuModule } from "src/core/b1/serviceLayer/goods-receipt-conference/goods-receipt-conference.module";
 
 @Module({
     imports: [
         ConfigModule,
-        HanaSkuModule,
-        ServiceLayerSkuModule,
-        BtpCatalogSKUModule
+        HanaGoodsReceiptConferenceModule,
+        HanaPurchaseInvoiceModule,
+        ServiceLayerGoodsReceiptConferenceModule,
+        ServiceLayerDraftModule,
+        ServiceLayerPurchaseCreditNoteModule,
+        BtpGoodsReceiptConferenceModule,
     ],
-    providers: [SKUService],
-    controllers: [SKUController],
-    exports: [SKUService],
+    providers: [GoodsReceiptConferenceService],
+    controllers: [GoodsReceiptConferenceController],
+    exports: [GoodsReceiptConferenceService],
 })
-export class SkuModule { }
+export class GoodsReceiptConferenceModule { }

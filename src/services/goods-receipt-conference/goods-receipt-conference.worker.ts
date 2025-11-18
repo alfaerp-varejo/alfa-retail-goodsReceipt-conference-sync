@@ -1,13 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { InvoiceService } from "./invoice.service";
+import { GoodsReceiptConferenceService } from "./goods-receipt-conference.service";
 
 @Injectable()
-export class InvoiceWorker {
+export class GoodsReceiptConferenceWorker {
     private isRunning = false;
-    private logger = new Logger(InvoiceWorker.name);
+    private logger = new Logger(GoodsReceiptConferenceWorker.name);
 
-    constructor(private readonly invoiceService: InvoiceService) { }
+    constructor(private readonly goodsReceiptConferenceService: GoodsReceiptConferenceService) { }
 
     /**
      * Executa a cada minuto — ignora se um processo ainda estiver rodando.
@@ -26,7 +26,7 @@ export class InvoiceWorker {
         this.logger.log("Iniciando ciclo de integração de Notas Fiscais...");
 
         try {
-            await this.invoiceService.process();
+            await this.goodsReceiptConferenceService.process();
         } catch (error: any) {
             this.logger.error(`Erro geral no ciclo: ${error.message}`);
         } finally {
