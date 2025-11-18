@@ -1,7 +1,7 @@
 import { ConfigService } from "src/core/config/config.service";
 import { Injectable, Logger } from "@nestjs/common";
-import * as ServiceLayer from 'b1-service-layer';
 import { DocumentLineSAPB1, DocumentSAPB1 } from "src/common/interfaces/document";
+import ServiceLayerManager from "../service-layer.manager";
 
 @Injectable()
 export class ServiceLayerPurchaseCreditNoteService {
@@ -11,7 +11,7 @@ export class ServiceLayerPurchaseCreditNoteService {
 	}
 
 	async post(document: DocumentSAPB1): Promise<DocumentSAPB1> {
-		const sl = await ServiceLayer.getInstance();
+		const sl = await ServiceLayerManager.getInstance();
 
 		try {
 			this.logger.log(`Adicionando devolução de nota fiscal de entrada. [${document.U_ChaveAcesso}]`);

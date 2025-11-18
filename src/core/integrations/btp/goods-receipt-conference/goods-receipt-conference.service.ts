@@ -48,7 +48,7 @@ export class BtpGoodsReceiptConferenceService {
 
             const headers = await this.capService.getHeaders();
 
-            const res = await axios.patch(`${this.env.host}/odata/v4/integration/GoodsReceiptConferences(ID=${ID})`, sync, { headers });
+            const res = await axios.patch(`${this.env.host}/odata/v4/integration/GoodsReceiptConference('${ID}')`, sync, { headers });
             const response = res.data.value ?? res.data;
 
             if (response.error) {

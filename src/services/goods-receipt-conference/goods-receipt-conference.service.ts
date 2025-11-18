@@ -1,9 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
 import { DocumentLineSAPB1, DocumentSAPB1 } from "src/common/interfaces/document";
 import { GoodsReceiptConference, GoodsReceiptConferenceItem } from "src/common/interfaces/goods-receipt-conference";
 import { HanaGoodsReceiptConferenceService } from "src/core/integrations/b1/hana/goods-receipt-conference/goods-receipt-conference.service";
-import { ServiceLayerGoodsReceiptConferenceService } from "src/core/integrations/b1/serviceLayer/goods-receipt-conference/goods-receipt-conference.service";
 import { BtpGoodsReceiptConferenceService } from "src/core/integrations/btp/goods-receipt-conference/goods-receipt-conference.service";
 import { ServiceLayerPurchaseCreditNoteService } from "src/core/integrations/b1/serviceLayer/purchaseCreditNote/purchaseCreditNote.service";
 import { HanaPurchaseInvoiceService } from "src/core/integrations/b1/hana/purchaseInvoice/purchaseInvoiceservice";
@@ -50,10 +48,17 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 }
 
                 this.logger.log(`Confererência de mercadoria - ${listGoodsReceiptConferences.length} registros pendentes encontrados`);
-                this.logger.debug(`Confererência de mercadoria: ${JSON.stringify(listGoodsReceiptConferences)}`);
 
                 for (const item of listGoodsReceiptConferences) {
-                    await this.integrate(item);
+                    try {
+                        this.logger.log(`Processando Confererência de mercadoria ID ${item.ID}...`);
+                        this.logger.debug(JSON.stringify(item, null, 2));
+                        
+                        await this.integrate(item);
+
+                    } catch (error) {
+                        this.logger.error(`Erro ao processar Confererência de mercadoria ID ${item.ID}: ${error.message}`);
+                    }
                 }
 
             } while (listGoodsReceiptConferences.length > 0);

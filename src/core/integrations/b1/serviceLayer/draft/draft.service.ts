@@ -1,7 +1,7 @@
 import { ConfigService } from "src/core/config/config.service";
 import { Injectable, Logger } from "@nestjs/common";
-import * as ServiceLayer from 'b1-service-layer';
 import { DocumentSAPB1 } from "src/common/interfaces/document";
+import ServiceLayerManager from "../service-layer.manager";
 
 @Injectable()
 export class ServiceLayerDraftService {
@@ -11,7 +11,7 @@ export class ServiceLayerDraftService {
 	}
 
 	async get(docEntry?: number): Promise<DocumentSAPB1> {
-		const sl = await ServiceLayer.getInstance();
+		const sl = await ServiceLayerManager.getInstance();
 
 		try {
 			this.logger.log(`Consultando Esboço de Recebimento de mercadoria aprovada ${docEntry}`);
@@ -33,7 +33,8 @@ export class ServiceLayerDraftService {
 	}
 
 	async saveToDocument(docEntry: number) {
-		const sl = await ServiceLayer.getInstance();
+		const sl = await ServiceLayerManager.getInstance();
+		
 		try {
 			this.logger.log(`Efetivando esboço como um novo documento ${docEntry}`);
 
@@ -56,7 +57,7 @@ export class ServiceLayerDraftService {
 	}
 
 	async patch(draft: DocumentSAPB1): Promise<DocumentSAPB1> {
-		const sl = await ServiceLayer.getInstance();
+		const sl = await ServiceLayerManager.getInstance();
 
 		try {
 			this.logger.log(`Atualizando draft ${draft.DocEntry} - ${draft.U_ChaveAcesso}`);
