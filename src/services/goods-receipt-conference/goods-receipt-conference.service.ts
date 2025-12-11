@@ -53,7 +53,7 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                     try {
                         this.logger.log(`Processando Confererência de mercadoria ID ${item.ID}...`);
                         this.logger.debug(JSON.stringify(item, null, 2));
-                        
+
                         await this.integrate(item);
 
                     } catch (error) {
@@ -62,6 +62,39 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 }
 
             } while (listGoodsReceiptConferences.length > 0);
+
+        } catch (error) {
+            this.logger.error(error.message);
+        }
+        finally {
+            this.isRunning = false;
+            this.logger.log(`GoodsReceiptConference - Finalizando integração...`);
+        }
+    }
+
+    async manualProcess(chaveAcesso: string) {
+        try {
+
+            const listGoodsReceiptConferences = await this.btpService.getListWithFilter(chaveAcesso);
+
+            if (listGoodsReceiptConferences.length === 0) {
+                this.logger.warn(`Confererência de mercadoria - Não encontrou o registro com a chave ${chaveAcesso}`);
+            }
+
+            this.logger.log(`Confererência de mercadoria - ${listGoodsReceiptConferences.length} registros pendentes encontrados`);
+
+            for (const item of listGoodsReceiptConferences) {
+                try {
+                    this.logger.log(`Processando Confererência de mercadoria ID ${item.ID}...`);
+                    this.logger.debug(JSON.stringify(item, null, 2));
+
+                    await this.integrate(item);
+
+                } catch (error) {
+                    this.logger.error(`Erro ao processar Confererência de mercadoria ID ${item.ID}: ${error.message}`);
+                }
+            }
+
 
         } catch (error) {
             this.logger.error(error.message);
@@ -83,7 +116,13 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
             const exists = await this.dbService.checkExists(serial, chaveAcesso, bplCode);
 
             if (!exists) {
-                await this.serviceLayerDraftService.saveToDocument(docEntry!);
+                const draftEntry = await this.dbService.getDraftEntryByChaveAcesso(chaveAcesso);
+
+                if (draftEntry == -1) {
+                    throw new Error(`Erro ao buscar Nº do Esboço para a chave de acesso ${chaveAcesso}`)
+                }
+
+                await this.serviceLayerDraftService.saveToDocument(draftEntry);
 
                 if (goodsReceiptConference._itens?.some(item => item.divergentQuantity! > 0)) {
                     const purchaseInfo = await this.dbPurchaseInvoice.getPurchaseInvoicesByDraft(docEntry);
