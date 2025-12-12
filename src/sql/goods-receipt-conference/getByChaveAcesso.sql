@@ -1,8 +1,7 @@
 SELECT
     "CHAVEACESSO" AS "ChaveAcesso",
-    "DOCENTRY" AS "DraftEntry",
-    "DOCNUM" AS "DraftEntry",
-    "DOCNUM" AS "DraftEntry",
+    "DOCENTRY" AS "DocEntry",
+    "DOCNUM" AS "DocNum",
     "DOCDATE" AS "DocDate",
     "TAXDATE" AS "TaxDate",
     "CARDCODE" AS "CardCode",
@@ -17,7 +16,7 @@ SELECT
     "TOTALNF" AS "TotalNf",
     "TOTALITENS" AS "TotalItens",
     "SERIAL" AS "Serial",
-    "ETIQUETADO" AS "Etiquetado",
+    "ETIQUETADO" AS "Etiquetado"
 FROM
     "_SYS_BIC"."{0}.ALFA_RETAIL_BTP/GOODS_RECEIPT_CONFERENCE" T0
 WHERE

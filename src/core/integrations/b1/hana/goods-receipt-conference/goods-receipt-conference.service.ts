@@ -43,9 +43,9 @@ export class HanaGoodsReceiptConferenceService {
             query = await readFile('src/sql/goods-receipt-conference/getByChaveAcesso.sql', 'utf-8');
             query = stringFormat(query, ambiente, chaveAcesso);
 
-            const response = await this.hanaService.query<GoodsReceiptConference[]>(query);
+            const response = await this.hanaService.query<any[]>(query);
 
-            return response.length > 0 ? response[0].docEntry! : -1;
+            return response.length > 0 ? response[0].DocEntry! : -1;
         } catch (error) {
             throw error;
         }
