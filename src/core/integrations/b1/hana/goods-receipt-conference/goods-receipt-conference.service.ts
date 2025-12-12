@@ -4,6 +4,7 @@ import { HanaService } from "../database/hana.service";
 import { readFile } from "fs/promises";
 import { Injectable } from "@nestjs/common";
 import { stringFormat } from "src/common/utils/stringExtension";
+import { GoodsReceiptConference } from "src/common/interfaces/goods-receipt-conference";
 
 @Injectable()
 export class HanaGoodsReceiptConferenceService {
@@ -28,6 +29,23 @@ export class HanaGoodsReceiptConferenceService {
             const response = await this.hanaService.query<any[]>(query);
 
             return response[0].contador > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getDraftEntryByChaveAcesso(chaveAcesso?: string): Promise<number> {
+        let query: string = '';
+
+        try {
+            const ambiente = (process.env.NODE_ENV == 'development') ? "GCV_PRD" : "GCV_PRD";
+
+            query = await readFile('src/sql/goods-receipt-conference/getByChaveAcesso.sql', 'utf-8');
+            query = stringFormat(query, ambiente, chaveAcesso);
+
+            const response = await this.hanaService.query<GoodsReceiptConference[]>(query);
+
+            return response.length > 0 ? response[0].docEntry! : -1;
         } catch (error) {
             throw error;
         }

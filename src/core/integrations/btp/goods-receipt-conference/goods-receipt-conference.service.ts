@@ -42,6 +42,27 @@ export class BtpGoodsReceiptConferenceService {
         }
     }
 
+    async getListWithFilter(chaveAcesso: string): Promise<GoodsReceiptConference[]> {
+        try {
+            this.logger.log(`Consultando lista de GoodsReceiptConferences pendentes por chave de acesso!`);
+
+            const headers = await this.capService.getHeaders();
+
+            const res = await axios.get(`${this.env.host}/odata/v4/integration/GoodsReceiptConference?$top=100&$filter=chaveAcesso eq '${chaveAcesso}'`, { headers });
+            const response = res.data.value ?? res.data;
+
+            if (response.error) {
+                throw new Error(response.message.error.message);
+            }
+
+            const products: GoodsReceiptConference[] = response;
+
+            return products;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async setSyncFields(ID: UUID, sync: Sync): Promise<boolean> {
         try {
             this.logger.log(`Atualizando GoodsReceiptConference ID (${ID})`);
