@@ -2,6 +2,8 @@ export interface DocumentSAPB1 {
     DocEntry?: number;
     DocNum?: number;
     DocDate?: Date;
+    DocDueDate?: Date;
+    TaxDate?: Date;
     CardCode?: string;
     CardName?: string;
     NumAtCard?: string;

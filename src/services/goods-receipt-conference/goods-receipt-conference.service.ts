@@ -124,11 +124,35 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 }
 
                 const document = await this.serviceLayerDraftService.get(draftEntry);
+                const taxDate = document.TaxDate ? moment(document.TaxDate) : moment();
                 document.DocDate = moment().toDate();
+                delete document.PaymentGroupCode;
 
                 await this.serviceLayerDraftService.patch(document);
 
+                const newDocumentTaxDate: DocumentSAPB1 = {
+                    DocEntry: draftEntry,
+                    TaxDate: taxDate.toDate()
+                };
+
+                delete newDocumentTaxDate.BPL_IDAssignedToInvoice;
+                delete newDocumentTaxDate.CardCode;
+                delete newDocumentTaxDate.DocDate;
+                delete newDocumentTaxDate.DocDueDate;
+                delete newDocumentTaxDate.DocNum;
+                delete newDocumentTaxDate.DocTotal;
+                delete newDocumentTaxDate.DocumentLines;
+                delete newDocumentTaxDate.NumAtCard
+                delete newDocumentTaxDate.PaymentGroupCode;
+                delete newDocumentTaxDate.Reference2;
+                delete newDocumentTaxDate.SequenceCode;
+                delete newDocumentTaxDate.SeriesString;
+                delete newDocumentTaxDate.TransNum;
+
+                await this.serviceLayerDraftService.patch(newDocumentTaxDate);
+
                 await this.serviceLayerDraftService.saveToDocument(draftEntry);
+
 
                 if (goodsReceiptConference._itens?.some(item => item.divergentQuantity! > 0)) {
                     const purchaseInfo = await this.dbPurchaseInvoice.getPurchaseInvoicesByDraft(docEntry);
