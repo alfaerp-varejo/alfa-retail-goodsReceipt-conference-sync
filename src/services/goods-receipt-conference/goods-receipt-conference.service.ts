@@ -6,6 +6,7 @@ import { BtpGoodsReceiptConferenceService } from "src/core/integrations/btp/good
 import { ServiceLayerPurchaseCreditNoteService } from "src/core/integrations/b1/serviceLayer/purchaseCreditNote/purchaseCreditNote.service";
 import { HanaPurchaseInvoiceService } from "src/core/integrations/b1/hana/purchaseInvoice/purchaseInvoiceservice";
 import { ServiceLayerDraftService } from "src/core/integrations/b1/serviceLayer/draft/draft.service";
+import * as moment from "moment";
 
 @Injectable()
 export class GoodsReceiptConferenceService implements OnModuleInit {
@@ -121,6 +122,11 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 if (draftEntry == -1) {
                     throw new Error(`Erro ao buscar Nº do Esboço para a chave de acesso ${chaveAcesso}`)
                 }
+
+                const document = await this.serviceLayerDraftService.get(draftEntry);
+                document.DocDate = moment().toDate();
+
+                await this.serviceLayerDraftService.patch(document);
 
                 await this.serviceLayerDraftService.saveToDocument(draftEntry);
 
