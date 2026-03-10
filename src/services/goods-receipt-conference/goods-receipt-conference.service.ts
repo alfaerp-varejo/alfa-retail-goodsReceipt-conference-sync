@@ -136,16 +136,16 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
 
                     await this.slService.post(document);
                 }
+
+                await this.btpService.setSyncFields(ID, {
+                    isSynced: true,
+                    lastSyncStatus_code: 'S',
+                    lastSyncDate: new Date(),
+                    lastSyncMessage: ''
+                });
+
+                this.logger.log(`Confererência de mercadoria - Integração ${ID} - ${serial} realizada com sucesso!`);
             }
-
-            await this.btpService.setSyncFields(ID, {
-                isSynced: true,
-                lastSyncStatus_code: 'S',
-                lastSyncDate: new Date(),
-                lastSyncMessage: ''
-            });
-
-            this.logger.log(`Confererência de mercadoria - Integração ${ID} - ${serial} realizada com sucesso!`);
 
             return goodsReceiptConference;
         } catch (error) {
