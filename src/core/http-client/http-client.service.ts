@@ -59,7 +59,6 @@ export class HttpClientService {
             const finalConfig = this.buildConfig(config, token);
 
             const response = await this.axiosInstance.post<T>(url, data, finalConfig);
-            console.log(response, "response");
 
             return response.data;
         } catch (error) {

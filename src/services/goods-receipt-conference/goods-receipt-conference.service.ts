@@ -53,7 +53,7 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 for (const item of listGoodsReceiptConferences) {
                     try {
                         this.logger.log(`Processando Confererência de mercadoria ID ${item.ID}...`);
-                        this.logger.debug(JSON.stringify(item, null, 2));
+                        // this.logger.debug(JSON.stringify(item, null, 2));
 
                         await this.integrate(item);
 
@@ -87,7 +87,7 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
             for (const item of listGoodsReceiptConferences) {
                 try {
                     this.logger.log(`Processando Confererência de mercadoria ID ${item.ID}...`);
-                    this.logger.debug(JSON.stringify(item, null, 2));
+                    // this.logger.debug(JSON.stringify(item, null, 2));
 
                     await this.integrate(item);
 
