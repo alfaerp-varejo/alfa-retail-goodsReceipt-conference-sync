@@ -169,6 +169,15 @@ export class GoodsReceiptConferenceService implements OnModuleInit {
                 });
 
                 this.logger.log(`Confererência de mercadoria - Integração ${ID} - ${serial} realizada com sucesso!`);
+            
+            } else {                
+                // Notas já lançadas no sap.
+                await this.btpService.setSyncFields(ID, {
+                    isSynced: true,
+                    lastSyncStatus_code: 'S',
+                    lastSyncDate: new Date(),
+                    lastSyncMessage: 'Está Nota fiscal foi lançada manualmente pelo SAP.'
+                });
             }
 
             return goodsReceiptConference;
